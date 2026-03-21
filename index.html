@@ -148,7 +148,13 @@
             justify-content: space-between;
             padding: 10px 12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background 0.15s;
         }
+
+        .flood-item:hover { background: rgba(255, 255, 255, 0.06); }
+        .flood-item.selected { background: rgba(255, 107, 107, 0.15); outline: 1px solid rgba(255, 107, 107, 0.4); }
 
         .flood-date { color: rgba(255, 255, 255, 0.7); }
         .flood-height { font-weight: 600; color: #ff6b6b; }
@@ -251,6 +257,8 @@
         const API_BASE = "https://www.vigicrues.gouv.fr/services";
         let allData = [];
         let chart = null;
+        let selectedFloodLevel = null;
+        let currentDays = 30;
 
         async function fetchData() {
             try {
@@ -272,7 +280,7 @@
                 })).sort((a, b) => a.time - b.time);
 
                 updateCurrent();
-                updateChart(30);
+                updateChart(currentDays);
                 displayFloods(stationJson);
 
                 document.getElementById("loading").classList.add("hidden");
@@ -310,26 +318,42 @@
         }
 
         function updateChart(days) {
+            currentDays = days;
             const data = getFilteredData(days);
             updateStats(data);
 
             const ctx = document.getElementById("levelChart").getContext("2d");
             if (chart) chart.destroy();
 
+            const datasets = [{
+                label: "Hauteur (m)",
+                data: data.map(d => ({ x: d.time, y: d.value })),
+                borderColor: "#4fc3f7",
+                backgroundColor: "rgba(79, 195, 247, 0.1)",
+                fill: true,
+                pointRadius: 0,
+                borderWidth: 2,
+                tension: 0.3
+            }];
+
+            if (selectedFloodLevel !== null && data.length > 0) {
+                const xMin = data[0].time;
+                const xMax = data[data.length - 1].time;
+                datasets.push({
+                    label: selectedFloodLevel.label,
+                    data: [{ x: xMin, y: selectedFloodLevel.height }, { x: xMax, y: selectedFloodLevel.height }],
+                    borderColor: "#ff6b6b",
+                    borderWidth: 2,
+                    borderDash: [6, 4],
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0
+                });
+            }
+
             chart = new Chart(ctx, {
                 type: "line",
-                data: {
-                    datasets: [{
-                        label: "Hauteur (m)",
-                        data: data.map(d => ({ x: d.time, y: d.value })),
-                        borderColor: "#4fc3f7",
-                        backgroundColor: "rgba(79, 195, 247, 0.1)",
-                        fill: true,
-                        pointRadius: 0,
-                        borderWidth: 2,
-                        tension: 0.3
-                    }]
-                },
+                data: { datasets },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
@@ -377,35 +401,53 @@
             { date: "4 juin 2016",     height: 5.4 }
         ];
 
+        let floodEntries = [];
+
         function displayFloods(stationJson) {
             const list = document.getElementById("flood-list");
-            let html = "";
             let crues = null;
             try {
                 crues = stationJson.Station.CruesHistoriques;
             } catch (e) {}
 
             if (crues && crues.length > 0) {
-                crues.forEach(c => {
-                    const flow = c.QCrueHistorique ? ` – ${c.QCrueHistorique} m³/s` : "";
-                    html += `<li class="flood-item">
-                        <span class="flood-date">${c.LbUsuelCrueHistorique || c.DtCrueHistorique || "Inconnue"}</span>
-                        <span><span class="flood-height">${c.HauteurCrueHistorique || "?"} m</span>
-                        <span class="flood-flow">${flow}</span></span>
-                    </li>`;
-                });
+                floodEntries = crues.map(c => ({
+                    label: c.LbUsuelCrueHistorique || c.DtCrueHistorique || "Inconnue",
+                    height: parseFloat(c.HauteurCrueHistorique),
+                    flow: c.QCrueHistorique ? ` – ${c.QCrueHistorique} m³/s` : ""
+                }));
             } else {
-                HISTORIC_FLOODS.forEach(c => {
-                    html += `<li class="flood-item">
-                        <span class="flood-date">Crue du ${c.date}</span>
-                        <span class="flood-height">${c.height} m</span>
-                    </li>`;
-                });
+                floodEntries = HISTORIC_FLOODS.map(c => ({
+                    label: `Crue du ${c.date}`,
+                    height: c.height,
+                    flow: ""
+                }));
             }
-            list.innerHTML = html;
+
+            list.innerHTML = floodEntries.map((c, i) => `
+                <li class="flood-item" data-index="${i}">
+                    <span class="flood-date">${c.label}</span>
+                    <span><span class="flood-height">${c.height} m</span>
+                    <span class="flood-flow">${c.flow}</span></span>
+                </li>`).join("");
+
+            list.querySelectorAll(".flood-item").forEach(item => {
+                item.addEventListener("click", () => {
+                    const idx = parseInt(item.dataset.index);
+                    const flood = floodEntries[idx];
+                    if (selectedFloodLevel && selectedFloodLevel.label === flood.label) {
+                        selectedFloodLevel = null;
+                        item.classList.remove("selected");
+                    } else {
+                        selectedFloodLevel = flood;
+                        list.querySelectorAll(".flood-item").forEach(el => el.classList.remove("selected"));
+                        item.classList.add("selected");
+                    }
+                    updateChart(currentDays);
+                });
+            });
         }
 
-        // Period buttons
         document.querySelectorAll(".period-btn").forEach(btn => {
             btn.addEventListener("click", () => {
                 document.querySelectorAll(".period-btn").forEach(b => b.classList.remove("active"));
