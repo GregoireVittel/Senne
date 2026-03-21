@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>La Seine – Niveau d'eau à Croissy-sur-Seine</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: linear-gradient(135deg, #0a1628 0%, #1a3a5c 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px 10px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.4rem;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #87ceeb;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: rgba(30, 60, 114, 0.85);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .current-level {
+            text-align: center;
+        }
+
+        .level-value {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #4fc3f7;
+        }
+
+        .level-unit {
+            font-size: 1.2rem;
+            color: #87ceeb;
+        }
+
+        .level-time {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 6px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .stat {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 8px;
+            padding: 12px 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .stat-value.high { color: #ff6b6b; }
+        .stat-value.low { color: #69db7c; }
+        .stat-value.avg { color: #ffd43b; }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .period-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .period-btn {
+            padding: 6px 14px;
+            border: 1px solid rgba(135, 206, 235, 0.4);
+            background: transparent;
+            color: #87ceeb;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .period-btn.active {
+            background: #4fc3f7;
+            color: #0a1628;
+            border-color: #4fc3f7;
+            font-weight: 600;
+        }
+
+        .period-btn:hover:not(.active) {
+            background: rgba(135, 206, 235, 0.15);
+        }
+
+        .historic {
+            margin-top: 8px;
+        }
+
+        .historic h2 {
+            font-size: 1rem;
+            color: #87ceeb;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .flood-list {
+            list-style: none;
+        }
+
+        .flood-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .flood-date { color: rgba(255, 255, 255, 0.7); }
+        .flood-height { font-weight: 600; color: #ff6b6b; }
+        .flood-flow { font-size: 0.85rem; color: rgba(255, 255, 255, 0.5); }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1rem;
+        }
+
+        .error {
+            text-align: center;
+            padding: 20px;
+            color: #ff6b6b;
+        }
+
+        .hidden { display: none !important; }
+
+        .refresh-btn {
+            display: block;
+            margin: 0 auto 16px;
+            padding: 8px 20px;
+            background: #4fc3f7;
+            color: #0a1628;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .refresh-btn:hover { background: #81d4fa; }
+
+        .source {
+            text-align: center;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.35);
+            margin-top: 10px;
+        }
+
+        .source a { color: rgba(135, 206, 235, 0.5); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>La Seine à Croissy-sur-Seine</h1>
+        <p class="subtitle">Station Chatou – Barrage (aval)</p>
+
+        <div id="loading" class="loading">Chargement des données...</div>
+        <div id="error" class="error hidden"></div>
+
+        <div id="content" class="hidden">
+            <div class="card current-level">
+                <div class="level-value"><span id="current-val">--</span><span class="level-unit"> m</span></div>
+                <div class="level-time" id="current-time"></div>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-label">Min</div>
+                        <div class="stat-value low" id="stat-min">--</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Moy</div>
+                        <div class="stat-value avg" id="stat-avg">--</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Max</div>
+                        <div class="stat-value high" id="stat-max">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="period-buttons">
+                    <button class="period-btn" data-days="1">24h</button>
+                    <button class="period-btn" data-days="7">7 jours</button>
+                    <button class="period-btn active" data-days="30">30 jours</button>
+                    <button class="period-btn" data-days="0">Tout</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="levelChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card historic">
+                <h2>Crues historiques</h2>
+                <ul class="flood-list" id="flood-list"></ul>
+            </div>
+        </div>
+
+        <button class="refresh-btn" id="refresh-btn">Actualiser</button>
+
+        <p class="source">
+            Données : <a href="https://www.vigicrues.gouv.fr/station/F712000102" target="_blank">Vigicrues – Station F712000102</a>
+        </p>
+    </div>
+
+    <script>
+        const STATION = "F712000102";
+        const API_BASE = "https://www.vigicrues.gouv.fr/services";
+        let allData = [];
+        let chart = null;
+
+        async function fetchData() {
+            try {
+                document.getElementById("loading").classList.remove("hidden");
+                document.getElementById("error").classList.add("hidden");
+                document.getElementById("content").classList.add("hidden");
+
+                const [obsRes, stationRes] = await Promise.all([
+                    fetch(`${API_BASE}/observations.json/index.php?CdStationHydro=${STATION}&GrdSerie=H&FormatDate=iso`),
+                    fetch(`${API_BASE}/station.json/index.php?CdStationHydro=${STATION}`)
+                ]);
+
+                const obsJson = await obsRes.json();
+                const stationJson = await stationRes.json();
+
+                allData = obsJson.Serie.ObssHydro.map(o => ({
+                    time: new Date(o.DtObsHydro),
+                    value: o.ResObsHydro
+                })).sort((a, b) => a.time - b.time);
+
+                updateCurrent();
+                updateChart(30);
+                displayFloods(stationJson);
+
+                document.getElementById("loading").classList.add("hidden");
+                document.getElementById("content").classList.remove("hidden");
+            } catch (e) {
+                document.getElementById("loading").classList.add("hidden");
+                document.getElementById("error").classList.remove("hidden");
+                document.getElementById("error").textContent = "Erreur : " + e.message;
+            }
+        }
+
+        function updateCurrent() {
+            if (allData.length === 0) return;
+            const latest = allData[allData.length - 1];
+            document.getElementById("current-val").textContent = latest.value.toFixed(2);
+            document.getElementById("current-time").textContent =
+                "Dernière mesure : " + latest.time.toLocaleString("fr-FR");
+        }
+
+        function getFilteredData(days) {
+            if (days === 0) return allData;
+            const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+            return allData.filter(d => d.time >= cutoff);
+        }
+
+        function updateStats(data) {
+            if (data.length === 0) return;
+            const values = data.map(d => d.value);
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            const avg = values.reduce((a, b) => a + b, 0) / values.length;
+            document.getElementById("stat-min").textContent = min.toFixed(2) + " m";
+            document.getElementById("stat-avg").textContent = avg.toFixed(2) + " m";
+            document.getElementById("stat-max").textContent = max.toFixed(2) + " m";
+        }
+
+        function updateChart(days) {
+            const data = getFilteredData(days);
+            updateStats(data);
+
+            const ctx = document.getElementById("levelChart").getContext("2d");
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    datasets: [{
+                        label: "Hauteur (m)",
+                        data: data.map(d => ({ x: d.time, y: d.value })),
+                        borderColor: "#4fc3f7",
+                        backgroundColor: "rgba(79, 195, 247, 0.1)",
+                        fill: true,
+                        pointRadius: 0,
+                        borderWidth: 2,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: "index"
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: items => new Date(items[0].parsed.x).toLocaleString("fr-FR"),
+                                label: item => item.parsed.y.toFixed(2) + " m"
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: "time",
+                            time: {
+                                displayFormats: {
+                                    hour: "dd/MM HH:mm",
+                                    day: "dd/MM",
+                                    week: "dd/MM"
+                                }
+                            },
+                            grid: { color: "rgba(255,255,255,0.06)" },
+                            ticks: { color: "rgba(255,255,255,0.5)", font: { size: 10 }, maxTicksLimit: 8 }
+                        },
+                        y: {
+                            grid: { color: "rgba(255,255,255,0.06)" },
+                            ticks: {
+                                color: "rgba(255,255,255,0.5)",
+                                callback: v => v.toFixed(1) + " m"
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayFloods(stationJson) {
+            const list = document.getElementById("flood-list");
+            let html = "";
+            try {
+                const crues = stationJson.Station.CruesHistoriques;
+                if (crues && crues.length > 0) {
+                    crues.forEach(c => {
+                        const flow = c.QCrueHistorique ? ` – ${c.QCrueHistorique} m³/s` : "";
+                        html += `<li class="flood-item">
+                            <span class="flood-date">${c.LbUsuelCrueHistorique || c.DtCrueHistorique || "Inconnue"}</span>
+                            <span><span class="flood-height">${c.HauteurCrueHistorique || "?"} m</span>
+                            <span class="flood-flow">${flow}</span></span>
+                        </li>`;
+                    });
+                }
+            } catch (e) {
+                html = '<li class="flood-item">Données non disponibles</li>';
+            }
+            list.innerHTML = html || '<li class="flood-item">Aucune crue historique enregistrée</li>';
+        }
+
+        // Period buttons
+        document.querySelectorAll(".period-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".period-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                updateChart(parseInt(btn.dataset.days));
+            });
+        });
+
+        document.getElementById("refresh-btn").addEventListener("click", fetchData);
+        fetchData();
+    </script>
+</body>
+</html>
