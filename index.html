@@ -254,6 +254,7 @@
 
     <script>
         const STATION = "F712000102";
+        const DATA_URL = "data.json";
         const API_BASE = "https://www.vigicrues.gouv.fr/services";
         let allData = [];
         let chart = null;
@@ -261,11 +262,31 @@
         let currentDays = 30;
 
         async function fetchJson(url) {
-            const res = await fetch(url);
+            const res = await fetch(url, { cache: "no-store" });
             if (!res.ok) {
                 throw new Error(`HTTP ${res.status} sur ${url}`);
             }
             return await res.json();
+        }
+
+        async function fetchBundledData() {
+            const cached = await fetchJson(`${DATA_URL}?t=${Date.now()}`);
+            if (!cached?.observations) {
+                throw new Error("data.json ne contient pas d'observations");
+            }
+            return {
+                observations: cached.observations,
+                station: cached.station || {},
+                generatedAt: cached.generatedAt || null
+            };
+        }
+
+        async function fetchLiveVigicruesData() {
+            const [observations, station] = await Promise.all([
+                fetchJson(`${API_BASE}/observations.json/index.php?CdStationHydro=${STATION}&GrdSerie=H&FormatDate=iso`),
+                fetchJson(`${API_BASE}/station.json/index.php?CdStationHydro=${STATION}`)
+            ]);
+            return { observations, station, generatedAt: null };
         }
 
         function parseObservationData(obsJson) {
@@ -294,16 +315,19 @@
                 document.getElementById("error").classList.add("hidden");
                 document.getElementById("content").classList.add("hidden");
 
-                const [obsJson, stationJson] = await Promise.all([
-                    fetchJson(`${API_BASE}/observations.json/index.php?CdStationHydro=${STATION}&GrdSerie=H&FormatDate=iso`),
-                    fetchJson(`${API_BASE}/station.json/index.php?CdStationHydro=${STATION}`)
-                ]);
+                let payload;
+                try {
+                    payload = await fetchBundledData();
+                } catch (cacheError) {
+                    console.warn("Impossible de charger data.json, tentative Vigicrues directe", cacheError);
+                    payload = await fetchLiveVigicruesData();
+                }
 
-                allData = parseObservationData(obsJson);
+                allData = parseObservationData(payload.observations);
 
                 updateCurrent();
                 updateChart(currentDays);
-                displayFloods(stationJson);
+                displayFloods(payload.station);
 
                 document.getElementById("loading").classList.add("hidden");
                 document.getElementById("content").classList.remove("hidden");
@@ -446,7 +470,7 @@
             const list = document.getElementById("flood-list");
             let crues = null;
             try {
-                crues = stationJson?.Station?.CruesHistoriques;
+                crues = stationJson?.Station?.CruesHistoriques || stationJson?.CruesHistoriques;
             } catch (e) {}
 
             if (crues && crues.length > 0) {
