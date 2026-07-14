@@ -260,24 +260,46 @@
         let selectedFloodLevel = null;
         let currentDays = 30;
 
+        async function fetchJson(url) {
+            const res = await fetch(url);
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status} sur ${url}`);
+            }
+            return await res.json();
+        }
+
+        function parseObservationData(obsJson) {
+            const raw = obsJson?.Serie?.ObssHydro;
+            if (!Array.isArray(raw)) {
+                throw new Error("Format des données d'observation inattendu");
+            }
+
+            const parsed = raw.map(o => {
+                const time = new Date(o.DtObsHydro);
+                const value = Number(o.ResObsHydro);
+                return { time, value };
+            }).filter(d => !Number.isNaN(d.time.getTime()) && Number.isFinite(d.value))
+              .sort((a, b) => a.time - b.time);
+
+            if (parsed.length === 0) {
+                throw new Error("Aucune observation exploitable renvoyée par Vigicrues");
+            }
+
+            return parsed;
+        }
+
         async function fetchData() {
             try {
                 document.getElementById("loading").classList.remove("hidden");
                 document.getElementById("error").classList.add("hidden");
                 document.getElementById("content").classList.add("hidden");
 
-                const [obsRes, stationRes] = await Promise.all([
-                    fetch(`${API_BASE}/observations.json/index.php?CdStationHydro=${STATION}&GrdSerie=H&FormatDate=iso`),
-                    fetch(`${API_BASE}/station.json/index.php?CdStationHydro=${STATION}`)
+                const [obsJson, stationJson] = await Promise.all([
+                    fetchJson(`${API_BASE}/observations.json/index.php?CdStationHydro=${STATION}&GrdSerie=H&FormatDate=iso`),
+                    fetchJson(`${API_BASE}/station.json/index.php?CdStationHydro=${STATION}`)
                 ]);
 
-                const obsJson = await obsRes.json();
-                const stationJson = await stationRes.json();
-
-                allData = obsJson.Serie.ObssHydro.map(o => ({
-                    time: new Date(o.DtObsHydro),
-                    value: o.ResObsHydro
-                })).sort((a, b) => a.time - b.time);
+                allData = parseObservationData(obsJson);
 
                 updateCurrent();
                 updateChart(currentDays);
@@ -286,7 +308,9 @@
                 document.getElementById("loading").classList.add("hidden");
                 document.getElementById("content").classList.remove("hidden");
             } catch (e) {
+                console.error(e);
                 document.getElementById("loading").classList.add("hidden");
+                document.getElementById("content").classList.add("hidden");
                 document.getElementById("error").classList.remove("hidden");
                 document.getElementById("error").textContent = "Erreur : " + e.message;
             }
@@ -295,7 +319,7 @@
         function updateCurrent() {
             if (allData.length === 0) return;
             const latest = allData[allData.length - 1];
-            document.getElementById("current-val").textContent = latest.value.toFixed(2);
+            document.getElementById("current-val").textContent = Number(latest.value).toFixed(2);
             document.getElementById("current-time").textContent =
                 "Dernière mesure : " + latest.time.toLocaleString("fr-FR");
         }
@@ -307,8 +331,19 @@
         }
 
         function updateStats(data) {
-            if (data.length === 0) return;
-            const values = data.map(d => d.value);
+            if (data.length === 0) {
+                document.getElementById("stat-min").textContent = "--";
+                document.getElementById("stat-avg").textContent = "--";
+                document.getElementById("stat-max").textContent = "--";
+                return;
+            }
+            const values = data.map(d => d.value).filter(v => Number.isFinite(v));
+            if (values.length === 0) {
+                document.getElementById("stat-min").textContent = "--";
+                document.getElementById("stat-avg").textContent = "--";
+                document.getElementById("stat-max").textContent = "--";
+                return;
+            }
             const min = Math.min(...values);
             const max = Math.max(...values);
             const avg = values.reduce((a, b) => a + b, 0) / values.length;
@@ -327,7 +362,7 @@
 
             const datasets = [{
                 label: "Hauteur (m)",
-                data: data.map(d => ({ x: d.time, y: d.value })),
+                data: data.filter(d => d.time instanceof Date && !Number.isNaN(d.time.getTime()) && Number.isFinite(d.value)).map(d => ({ x: d.time, y: d.value })),
                 borderColor: "#4fc3f7",
                 backgroundColor: "rgba(79, 195, 247, 0.1)",
                 fill: true,
@@ -339,16 +374,20 @@
             if (selectedFloodLevel !== null && data.length > 0) {
                 const xMin = data[0].time;
                 const xMax = data[data.length - 1].time;
-                datasets.push({
-                    label: selectedFloodLevel.label,
-                    data: [{ x: xMin, y: selectedFloodLevel.height }, { x: xMax, y: selectedFloodLevel.height }],
-                    borderColor: "#ff6b6b",
-                    borderWidth: 2,
-                    borderDash: [6, 4],
-                    pointRadius: 0,
-                    fill: false,
-                    tension: 0
-                });
+                if (!xMin || !xMax) {
+                    selectedFloodLevel = null;
+                } else {
+                    datasets.push({
+                        label: selectedFloodLevel.label,
+                        data: [{ x: xMin, y: selectedFloodLevel.height }, { x: xMax, y: selectedFloodLevel.height }],
+                        borderColor: "#ff6b6b",
+                        borderWidth: 2,
+                        borderDash: [6, 4],
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0
+                    });
+                }
             }
 
             chart = new Chart(ctx, {
@@ -407,15 +446,15 @@
             const list = document.getElementById("flood-list");
             let crues = null;
             try {
-                crues = stationJson.Station.CruesHistoriques;
+                crues = stationJson?.Station?.CruesHistoriques;
             } catch (e) {}
 
             if (crues && crues.length > 0) {
                 floodEntries = crues.map(c => ({
                     label: c.LbUsuelCrueHistorique || c.DtCrueHistorique || "Inconnue",
-                    height: parseFloat(c.HauteurCrueHistorique),
+                    height: Number.parseFloat(c.HauteurCrueHistorique),
                     flow: c.QCrueHistorique ? ` – ${c.QCrueHistorique} m³/s` : ""
-                }));
+                })).filter(c => Number.isFinite(c.height));
             } else {
                 floodEntries = HISTORIC_FLOODS.map(c => ({
                     label: `Crue du ${c.date}`,
@@ -424,10 +463,15 @@
                 }));
             }
 
+            if (floodEntries.length === 0) {
+                list.innerHTML = '<li class="flood-item"><span class="flood-date">Aucune crue historique disponible</span></li>';
+                return;
+            }
+
             list.innerHTML = floodEntries.map((c, i) => `
                 <li class="flood-item" data-index="${i}">
                     <span class="flood-date">${c.label}</span>
-                    <span><span class="flood-height">${c.height} m</span>
+                    <span><span class="flood-height">${c.height.toFixed(2)} m</span>
                     <span class="flood-flow">${c.flow}</span></span>
                 </li>`).join("");
 
