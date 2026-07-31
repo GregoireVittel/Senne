@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-30T22:17:46.289143+00:00",
+  "generatedAt": "2026-07-31T00:14:28.683306+00:00",
   "stationCode": "F712000102",
   "sources": {
     "observations": "https://www.vigicrues.gouv.fr/services/observations.json/index.php?CdStationHydro=F712000102&GrdSerie=H&FormatDate=iso",
@@ -12,102 +12,6 @@
       "Link": "services/station.json?CdStationHydro=F712000102",
       "GrdSerie": "H",
       "ObssHydro": [
-        {
-          "DtObsHydro": "2026-06-28T23:00:00+00:00",
-          "ResObsHydro": 0.07
-        },
-        {
-          "DtObsHydro": "2026-06-29T00:00:00+00:00",
-          "ResObsHydro": 0.06
-        },
-        {
-          "DtObsHydro": "2026-06-29T01:00:00+00:00",
-          "ResObsHydro": 0.07
-        },
-        {
-          "DtObsHydro": "2026-06-29T02:00:00+00:00",
-          "ResObsHydro": 0.1
-        },
-        {
-          "DtObsHydro": "2026-06-29T03:00:00+00:00",
-          "ResObsHydro": 0.08
-        },
-        {
-          "DtObsHydro": "2026-06-29T04:00:00+00:00",
-          "ResObsHydro": 0.08
-        },
-        {
-          "DtObsHydro": "2026-06-29T05:00:00+00:00",
-          "ResObsHydro": 0.04
-        },
-        {
-          "DtObsHydro": "2026-06-29T06:00:00+00:00",
-          "ResObsHydro": 0.09
-        },
-        {
-          "DtObsHydro": "2026-06-29T07:00:00+00:00",
-          "ResObsHydro": 0.09
-        },
-        {
-          "DtObsHydro": "2026-06-29T08:00:00+00:00",
-          "ResObsHydro": 0.09
-        },
-        {
-          "DtObsHydro": "2026-06-29T09:00:00+00:00",
-          "ResObsHydro": 0.08
-        },
-        {
-          "DtObsHydro": "2026-06-29T10:00:00+00:00",
-          "ResObsHydro": 0.1
-        },
-        {
-          "DtObsHydro": "2026-06-29T11:00:00+00:00",
-          "ResObsHydro": 0.1
-        },
-        {
-          "DtObsHydro": "2026-06-29T12:00:00+00:00",
-          "ResObsHydro": 0.1
-        },
-        {
-          "DtObsHydro": "2026-06-29T13:00:00+00:00",
-          "ResObsHydro": 0.1
-        },
-        {
-          "DtObsHydro": "2026-06-29T14:00:00+00:00",
-          "ResObsHydro": 0.09
-        },
-        {
-          "DtObsHydro": "2026-06-29T15:00:00+00:00",
-          "ResObsHydro": 0.11
-        },
-        {
-          "DtObsHydro": "2026-06-29T16:00:00+00:00",
-          "ResObsHydro": 0.12
-        },
-        {
-          "DtObsHydro": "2026-06-29T17:00:00+00:00",
-          "ResObsHydro": 0.05
-        },
-        {
-          "DtObsHydro": "2026-06-29T18:00:00+00:00",
-          "ResObsHydro": 0.09
-        },
-        {
-          "DtObsHydro": "2026-06-29T19:00:00+00:00",
-          "ResObsHydro": 0.05
-        },
-        {
-          "DtObsHydro": "2026-06-29T20:00:00+00:00",
-          "ResObsHydro": 0.07
-        },
-        {
-          "DtObsHydro": "2026-06-29T21:00:00+00:00",
-          "ResObsHydro": 0.07
-        },
-        {
-          "DtObsHydro": "2026-06-29T22:00:00+00:00",
-          "ResObsHydro": 0.09
-        },
         {
           "DtObsHydro": "2026-06-29T23:00:00+00:00",
           "ResObsHydro": 0.08
@@ -13095,6 +12999,54 @@
         {
           "DtObsHydro": "2026-07-30T22:00:00+00:00",
           "ResObsHydro": 0.14
+        },
+        {
+          "DtObsHydro": "2026-07-30T22:10:00+00:00",
+          "ResObsHydro": 0.1
+        },
+        {
+          "DtObsHydro": "2026-07-30T22:20:00+00:00",
+          "ResObsHydro": 0.12
+        },
+        {
+          "DtObsHydro": "2026-07-30T22:30:00+00:00",
+          "ResObsHydro": 0.08
+        },
+        {
+          "DtObsHydro": "2026-07-30T22:40:00+00:00",
+          "ResObsHydro": 0.11
+        },
+        {
+          "DtObsHydro": "2026-07-30T22:50:00+00:00",
+          "ResObsHydro": 0.18
+        },
+        {
+          "DtObsHydro": "2026-07-30T23:00:00+00:00",
+          "ResObsHydro": 0.11
+        },
+        {
+          "DtObsHydro": "2026-07-30T23:10:00+00:00",
+          "ResObsHydro": 0.11
+        },
+        {
+          "DtObsHydro": "2026-07-30T23:20:00+00:00",
+          "ResObsHydro": 0.12
+        },
+        {
+          "DtObsHydro": "2026-07-30T23:30:00+00:00",
+          "ResObsHydro": 0.08
+        },
+        {
+          "DtObsHydro": "2026-07-30T23:40:00+00:00",
+          "ResObsHydro": 0.11
+        },
+        {
+          "DtObsHydro": "2026-07-30T23:50:00+00:00",
+          "ResObsHydro": 0.11
+        },
+        {
+          "DtObsHydro": "2026-07-31T00:00:00+00:00",
+          "ResObsHydro": 0.15
         }
       ]
     },
