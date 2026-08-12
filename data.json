@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-12T15:12:51.731976+00:00",
+  "generatedAt": "2026-08-12T16:08:04.576016+00:00",
   "stationCode": "F712000102",
   "sources": {
     "observations": "https://www.vigicrues.gouv.fr/services/observations.json/index.php?CdStationHydro=F712000102&GrdSerie=H&FormatDate=iso",
