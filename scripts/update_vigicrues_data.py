@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import json
 import sys
+import time
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,12 +24,40 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data.json"
 
 
-def fetch_json(url: str) -> object:
-    req = urllib.request.Request(url, headers={"User-Agent": "Senne-GitHub-Pages-Updater/1.0"})
-    with urllib.request.urlopen(req, timeout=30) as response:
-        if response.status != 200:
-            raise RuntimeError(f"HTTP {response.status} while fetching {url}")
-        return json.load(response)
+def fetch_json(url: str, attempts: int = 4) -> object:
+    """Fetch a JSON resource, retrying only short-lived upstream failures."""
+    last_error: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            req = urllib.request.Request(
+                url, headers={"User-Agent": "Senne-GitHub-Pages-Updater/1.1"}
+            )
+            with urllib.request.urlopen(req, timeout=30) as response:
+                if response.status != 200:
+                    raise RuntimeError(f"HTTP {response.status} while fetching {url}")
+                return json.load(response)
+        except urllib.error.HTTPError as error:
+            last_error = error
+            transient = error.code in {408, 429, 500, 502, 503, 504}
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
+            last_error = error
+            transient = True
+        except RuntimeError:
+            raise
+
+        if not transient or attempt == attempts:
+            raise RuntimeError(
+                f"Vigicrues request failed after {attempt} attempt(s): {last_error}"
+            ) from last_error
+        delay = 2 * attempt
+        print(
+            f"Vigicrues request attempt {attempt}/{attempts} failed ({last_error}); "
+            f"retrying in {delay}s",
+            file=sys.stderr,
+        )
+        time.sleep(delay)
+
+    raise AssertionError("unreachable")
 
 
 def observation_count(observations: object) -> int:
