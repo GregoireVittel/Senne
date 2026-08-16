@@ -24,6 +24,10 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data.json"
 
 
+class TransientVigicruesError(RuntimeError):
+    """The upstream service was unavailable; retain the last known-good data."""
+
+
 def fetch_json(url: str, attempts: int = 4) -> object:
     """Fetch a JSON resource, retrying only short-lived upstream failures."""
     last_error: Exception | None = None
@@ -45,8 +49,12 @@ def fetch_json(url: str, attempts: int = 4) -> object:
         except RuntimeError:
             raise
 
-        if not transient or attempt == attempts:
+        if not transient:
             raise RuntimeError(
+                f"Vigicrues request failed after {attempt} attempt(s): {last_error}"
+            ) from last_error
+        if attempt == attempts:
+            raise TransientVigicruesError(
                 f"Vigicrues request failed after {attempt} attempt(s): {last_error}"
             ) from last_error
         delay = 2 * attempt
@@ -71,8 +79,15 @@ def observation_count(observations: object) -> int:
 
 
 def main() -> int:
-    observations = fetch_json(OBS_URL)
-    station = fetch_json(STATION_URL)
+    try:
+        observations = fetch_json(OBS_URL)
+        station = fetch_json(STATION_URL)
+    except TransientVigicruesError as error:
+        # A stale but valid same-origin data.json is safer than failing the scheduled
+        # job (and creating an alert) while Vigicrues has a temporary outage.
+        print(f"Vigicrues temporarily unavailable; retained existing data.json: {error}")
+        return 0
+
     count = observation_count(observations)
     if count <= 0:
         raise RuntimeError("Vigicrues returned no observation data")
