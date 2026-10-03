@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-03T17:14:45.954876+00:00",
+  "generatedAt": "2026-10-03T19:50:43.874533+00:00",
   "stationCode": "F712000102",
   "sources": {
     "observations": "https://www.vigicrues.gouv.fr/services/observations.json/index.php?CdStationHydro=F712000102&GrdSerie=H&FormatDate=iso",
@@ -34027,6 +34027,54 @@
         {
           "DtObsHydro": "2026-10-03T17:00:00+00:00",
           "ResObsHydro": 0.06
+        },
+        {
+          "DtObsHydro": "2026-10-03T17:10:00+00:00",
+          "ResObsHydro": 0.08
+        },
+        {
+          "DtObsHydro": "2026-10-03T17:20:00+00:00",
+          "ResObsHydro": 0.05
+        },
+        {
+          "DtObsHydro": "2026-10-03T17:30:00+00:00",
+          "ResObsHydro": 0
+        },
+        {
+          "DtObsHydro": "2026-10-03T17:40:00+00:00",
+          "ResObsHydro": 0.06
+        },
+        {
+          "DtObsHydro": "2026-10-03T17:50:00+00:00",
+          "ResObsHydro": 0.08
+        },
+        {
+          "DtObsHydro": "2026-10-03T18:00:00+00:00",
+          "ResObsHydro": 0.1
+        },
+        {
+          "DtObsHydro": "2026-10-03T18:10:00+00:00",
+          "ResObsHydro": 0.05
+        },
+        {
+          "DtObsHydro": "2026-10-03T18:20:00+00:00",
+          "ResObsHydro": 0
+        },
+        {
+          "DtObsHydro": "2026-10-03T18:30:00+00:00",
+          "ResObsHydro": -0.01
+        },
+        {
+          "DtObsHydro": "2026-10-03T18:40:00+00:00",
+          "ResObsHydro": 0.04
+        },
+        {
+          "DtObsHydro": "2026-10-03T18:50:00+00:00",
+          "ResObsHydro": 0.12
+        },
+        {
+          "DtObsHydro": "2026-10-03T19:00:00+00:00",
+          "ResObsHydro": 0.03
         }
       ]
     },
