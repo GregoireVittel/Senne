@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-24T23:09:58.112398+00:00",
+  "generatedAt": "2026-10-25T01:07:28.651550+00:00",
   "stationCode": "F712000102",
   "sources": {
     "observations": "https://www.vigicrues.gouv.fr/services/observations.json/index.php?CdStationHydro=F712000102&GrdSerie=H&FormatDate=iso",
@@ -12991,6 +12991,30 @@
         {
           "DtObsHydro": "2026-10-24T23:00:00+00:00",
           "ResObsHydro": 0.28
+        },
+        {
+          "DtObsHydro": "2026-10-24T23:10:00+00:00",
+          "ResObsHydro": 0.27
+        },
+        {
+          "DtObsHydro": "2026-10-24T23:20:00+00:00",
+          "ResObsHydro": 0.26
+        },
+        {
+          "DtObsHydro": "2026-10-24T23:30:00+00:00",
+          "ResObsHydro": 0.24
+        },
+        {
+          "DtObsHydro": "2026-10-24T23:40:00+00:00",
+          "ResObsHydro": 0.23
+        },
+        {
+          "DtObsHydro": "2026-10-24T23:50:00+00:00",
+          "ResObsHydro": 0.25
+        },
+        {
+          "DtObsHydro": "2026-10-25T00:00:00+00:00",
+          "ResObsHydro": 0.22
         }
       ]
     },
