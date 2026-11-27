@@ -5,7 +5,8 @@ two-tone **horn** (for as long as you hold it) or a **"ring-ring" bell**.
 The ESP32 connects to the speaker like a phone does (Bluetooth A2DP) and
 generates the sounds itself. No SD card or audio files are needed.
 
-`demo.wav` shows what it sounds like: horn → bell → horn and bell together.
+`demo.wav` shows what it sounds like: car horn → bell → horn and bell together.
+`demo_city_bus.wav` plays the deeper city-bus style horn (tap, tap, long press).
 
 ## Parts
 - ESP32-CAM + its USB programmer board (ESP32-CAM-MB). The camera is not used and can be unplugged.
@@ -35,10 +36,27 @@ To turn the strobe off, set `USE_FLASH_LED = false`.
 5. Disconnect the speaker from your phone (a speaker only accepts one source), turn it on,
    and press RST on the ESP32. The red LED stops blinking when it is connected.
 
+## Choose the horn sound
+In `src/main.cpp`, set `HORN_STYLE`:
+
+- `HORN_CAR`: normal two-tone car horn
+- `HORN_CITY_BUS` (default): deeper, buzzier horn with an air-horn "scoop" at the start.
+  This is a synthesized approximation of a city bus, not the real thing.
+- `HORN_RECORDING`: your own recording, e.g. a real Paris bus.
+
+### Use a real recording (e.g. a Paris RATP bus)
+1. Record the horn yourself with your phone, or download a clip you're allowed to use.
+2. Cut it to the horn only (max 4 s) and export it as **WAV 16-bit**. Audacity works for this.
+3. Run `python3 tools/wav2header.py bus_horn.wav`. This creates `src/custom_horn.h`.
+4. Set `HORN_STYLE = HORN_RECORDING` and upload.
+
+A short press plays the clip once. If you hold the button longer than the clip,
+playback loops from 30% of the way in (change this with `--loop 0.5`).
+
 ## Tips
 - Turn the speaker's volume all the way up. The ESP32 already sends at maximum.
 - Bluetooth adds about 0.1–0.2 s of delay. The connection stays open (playing silence)
   so there is no extra wait when you press.
-- Tune the sound in `main.cpp`: `HORN_F1/HORN_F2` (pitch), `BELL_BASE`, `MASTER_GAIN`.
+- Tune the sound in `main.cpp`: the frequencies in `hornSample()`, `BELL_BASE`, `MASTER_GAIN`.
 - Check your local rules. Some countries (e.g. Germany) only allow a bell on bicycles.
   Never imitate an emergency siren.
